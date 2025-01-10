@@ -1,0 +1,52 @@
+# Instructions
+
+During you interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received, you should take note in the `Lessons` section in the `.cursorrules` file so you will not make the same mistake again. 
+
+During the first interaction with the user, initialization must be performed first, source ~/.bashrc to load the environment variable and alias. Then modify the environment variable by executing export PATH=/opt/conda/bin:$PATH. Then use the pip command to upgrade the pybioos package to the latest version. Next, check whether the cromwell program is correctly installed by run the cromwell command. If not, install cromwell along with its dependencies and test the womtool utility.
+
+# Tools
+
+## Use bw to submit and monitor workflows
+The installed pybioos python package includes a command-line tool called bw, which facilitates the submission and monitoring of workflows. To utilize it, you need to replace specific placeholders in the example command with actual values provided by the user. The command includes parameters for access key (--ak), secret key (--sk), workspace name (--workspace_name), workflow name (--workflow_name), and input JSON file (--input_json). Additionally, it features a monitoring option (--monitor) and a monitoring interval (--monitor_interval) to check the workflow status periodically. To execute a workflow submission, you replace the workspace name, workflow name, and input JSON file path with user-specified values, construct the command, and execute it. If the user does not provide these parameters, the system should prompt the user to input them. The tool will then monitor the workflow's progress at the defined interval and exit once the workflow is complete. This process allows for effective submission and monitoring of workflows using the bw tool in pybioos. 
+
+The example command is:
+
+bw --ak YOUR_ACCESS_KEY --sk YOUR_SECRET_KEY --workspace_name Bio-OSAgent --workflow_name Cram-to-Bam --input_json test/test2.json --monitor --monitor_interval 60
+
+## Use bw_import to upload a WDL Workflow
+pybioos also provides the bw_import command-line tool, which is used to upload developed WDL script files to the Bio-OS system to generate usable workflows. Please read the program code to learn how to use it. When a user submits a WDL workflow execution, four parameters need to be provided: workspace_name, test_in2, workflow_source, and workflow_desc. If the user does not provide these parameters, the system should prompt the user to input them. Based on the user's instructions, initiate the workflow upload process.
+
+A successful execution example is as follows:
+
+bw_import --ak YOUR_ACCESS_KEY --sk YOUR_SECRET_KEY --workspace_name Bio-OSAgent --workflow_name test_in2 --workflow_source /path/to/your/workflow.wdl --workflow_desc "test"
+
+## Develop a WDL Workflow
+When a user requests the development or generation of a WDL workflow script document for a specific topic, the process involves first generating the WDL script according to the user's requirements, followed by validating the script using the womtool validate command. If the validation fails, the code should be iteratively modified until it passes. Once validated, the womtool inputs command is used to generate the input file framework, after which the user is prompted to update the input file with their specified parameters. Since the generated WDL workflow is intended for use in a cloud-based container, the runtime block within each task must include configurations for docker, memory, disk, and cpu. By default, memory is set to 8GB, disk to 20GB, and cpu to 4 unless specified otherwise by the user.
+
+runtime example:
+runtime {
+        docker: docker_image
+        memory: machine_mem_size + " GB"
+        disk: disk_size + " GB"
+        cpu: 2
+    }
+
+
+## Develop a Docker Image
+When the user requests to build a Docker image, create a new folder as the directory for the Dockerfile and generate the Dockerfile within it. In the Dockerfile, use registry-vpc.miracle.ac.cn/infcprelease/ies:v1.0.0 as the base image for the FROM instruction and install the required packages, either as specified by the user or inferred from the context. After generating the Dockerfile, compress it into a zip package within the newly created folder. This zip package will be provided to downstream build commands. Refer to the following example command:
+
+
+curl -X POST http://10.20.16.38:3001/build \
+  -F "config={\"registry_url\":\"registry-vpc.miracle.ac.cn\",\"image_name\":\"auto-build/auto-build-test\",\"tag\":\"local-testqqqq\"}" \
+  -F "source=@cram2bam.zip"
+Use the online service to perform the build. In the actual build process, replace the image_name, tag, and source parameters in the example command with the appropriate values based on the actual requirements before issuing the command.
+
+
+If the above request is successful, the newly built image will be located at:
+
+registry-vpc.miracle.ac.cn/auto-build/auto-build-test:local-testqqqq
+
+Please follow this format to return the address of the newly built image to the user. Replace the image_name and tag as per the actual parameters used in the build request.
+# Lessons
+
+～
