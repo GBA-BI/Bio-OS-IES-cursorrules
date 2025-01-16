@@ -33,20 +33,55 @@ runtime {
 
 
 ## Develop a Docker Image
-When the user requests to build a Docker image, create a new folder as the directory for the Dockerfile and generate the Dockerfile within it. In the Dockerfile, use registry-vpc.miracle.ac.cn/infcprelease/ies:v1.0.0 as the base image for the FROM instruction and install the required packages, either as specified by the user or inferred from the context. After generating the Dockerfile, compress it into a zip package within the newly created folder. This zip package will be provided to downstream build commands. Refer to the following example command:
 
+When the user requests to build a Docker image, build the base image based on the following rules:
 
+   - Prefer using Miniconda images as the base image and use Conda to install bioinformatics software.
+   - Follow the conda-based environment setup pattern, create a dedicated conda environment for tool installation
+
+If only a Dockerfile is generated (without additional files), you can directly pass the Dockerfile to the build command. Otherwise, compress the Dockerfile and any additional files into a zip package within the newly created folder. The Dockerfile or zip package will be provided to downstream build commands.
+
+Required parameters:
+- Registry: Docker registry URL (e.g., "registry-vpc.miracle.ac.cn")
+- NamespaceName: Namespace for the image (e.g., "auto-build")
+- RepoName: Repository name for your application (e.g., "my-application")
+- ToTag: Version tag for the image (e.g., "v1.0.1")
+- Source: Path to your Dockerfile or zip package
+
+All parameters are mandatory. Refer to the following example commands:
+
+For Dockerfile:
 curl -X POST http://10.20.16.38:3001/build \
-  -F "config={\"registry_url\":\"registry-vpc.miracle.ac.cn\",\"image_name\":\"auto-build/auto-build-test\",\"tag\":\"local-testqqqq\"}" \
-  -F "source=@cram2bam.zip"
-Use the online service to perform the build. In the actual build process, replace the image_name, tag, and source parameters in the example command with the appropriate values based on the actual requirements before issuing the command.
+  -F "Registry=registry-vpc.miracle.ac.cn" \
+  -F "RepoName=my-application" \
+  -F "NamespaceName=auto-build" \
+  -F "ToTag=v1.0.1" \
+  -F "Source=@Dockerfile"
 
+For multiple files (zip package):
+curl -X POST http://10.20.16.38:3001/build \
+  -F "Registry=registry-vpc.miracle.ac.cn" \
+  -F "RepoName=my-application" \
+  -F "NamespaceName=auto-build" \
+  -F "ToTag=v1.0.1" \
+  -F "Source=@project.zip"
 
-If the above request is successful, the newly built image will be located at:
+The resulting image will be available at: {Registry}/{NamespaceName}/{RepoName}:{ToTag}
 
-registry-vpc.miracle.ac.cn/auto-build/auto-build-test:local-testqqqq
+## Check Build Status
+After submitting the build request, you will receive a response containing a TaskID. You can use this TaskID to check the build status using the following command:
 
-Please follow this format to return the address of the newly built image to the user. Replace the image_name and tag as per the actual parameters used in the build request.
+```bash
+curl http://10.20.16.38:3001/build/status/{TaskID}
+```
+
+Example:
+```bash
+curl http://10.20.16.38:3001/build/status/6053eb1b-6eae-4484-b824-3b875f41979a
+```
+
+The TaskID is returned in the response of the build request as the "TaskID" field. Use this endpoint to monitor the progress of your build task.
+
 # Lessons
 
 ～
